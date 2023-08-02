@@ -12,6 +12,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  updateDoc,
 } from "firebase/firestore";
 import { db } from "@/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -34,6 +35,12 @@ const saveUserToFirestore = async (user, session) => {
         email: user.email,
         image: user.image,
         username: session.user.username,
+        isConnected: true, // Add the isConnected field with a value of true
+      });
+    } else {
+      // If the user exists, update the isConnected field to true
+      await updateDoc(userRef, {
+        isConnected: true,
       });
     }
   } catch (error) {
@@ -100,11 +107,23 @@ export default function Home() {
     fetchLikesCount();
   }, [posts]);
 
+  const handleSignOut = async () => {
+    // Set the isConnected field to false when the user signs out
+    if (session && session.user.email) {
+      const userRef = doc(db, "users", session.user.email);
+      await updateDoc(userRef, {
+        isConnected: false,
+      });
+    }
+    // Then, sign out the user
+    await signOut();
+  };
+
   return (
     <div className="">
       {session ? (
         <div className="">
-          <button onClick={signOut}> byyy</button>
+<button onClick={handleSignOut}>byyy</button>
           <h1>{session.user.name}</h1>
           <Upload />
 
