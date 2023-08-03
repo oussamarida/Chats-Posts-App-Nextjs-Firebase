@@ -11,98 +11,11 @@ export default function Messenger() {
   const { data: session } = useSession();
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null); // State to store the selected chat
-  const [message, setmessage] = useState("");
   const [messages, setMessages] = useState([]);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      if (session) {
-        const userEmail = session.user.email;
-        const usersCollectionRef = collection(db, 'users');
-        const usersQuery = query(usersCollectionRef,where('email', '!=', userEmail));
-        
-        const unsubscribe = onSnapshot(
-          usersQuery,
-          (snapshot) => {
-            const userList = snapshot.docs.map((doc) => doc.data());
-            setChats(userList);
-          },
-          (error) => {
-            console.error('Error fetching users:', error);
-          }
-        );
-        return () => unsubscribe();
-      }
-    };
-  
-    fetchUsers();
-  }, [session]);
 
-  const handleCreateChat = async (selectedUser) => {
-    if (!session) return null;
-  
-    // Assuming 'chats' collection exists
-    const chatsCollectionRef = collection(db, 'chats');
-  
-    try {
-      const user1 = session.user.email;
-      const user2 = selectedUser.email;
-      const existingChatQuery = query(chatsCollectionRef, where('user1', '==', user1), where('user2', '==', user2));
-      const existingChatSnapshot = await getDocs(existingChatQuery);
-  
-      if (!existingChatSnapshot.empty) {
-        console.log('Chat already exists between these users.');
-        const existingChat = existingChatSnapshot.docs[0].data();
-        console.log('Existing Chat:', existingChat);
-        setSelectedChat(existingChat); // Store the existing chat in selectedChat state
-        return {
-          id: existingChatSnapshot.docs[0].id,
-          user1: existingChat.user1,
-          user2: existingChat.user2,
-          timestamp: serverTimestamp(),
-        };
-      }
-  
-      const existingChatQueryReverse = query(chatsCollectionRef, where('user1', '==', user2), where('user2', '==', user1));
-      const existingChatSnapshotReverse = await getDocs(existingChatQueryReverse);
-      if (!existingChatSnapshotReverse.empty) {
-        console.log('Chat already exists between these users (reverse).');
-        // Return the existing chat object from the reverse case
-        const existingChatReverse = existingChatSnapshotReverse.docs[0].data();
-        console.log('Existing Chat (Reverse):', existingChatReverse);
-        setSelectedChat(existingChatReverse); // Store the existing chat in selectedChat state
-        return {
-          id: existingChatSnapshotReverse.docs[0].id,
-          user1: existingChatReverse.user1,
-          user2: existingChatReverse.user2,
-          timestamp: serverTimestamp(), // Use `serverTimestamp()` instead of `timestap`
-        };
-      }
-  
-      // If no existing chat found, then create the chat document with user1 and user2 attributes
-      const newChatRef = doc(chatsCollectionRef); // Get a reference to a new document with a generated ID
-      const newChatId = newChatRef.id; // Get the generated ID
-      await setDoc(newChatRef, { // Save the chat document with the generated ID and user1, user2 attributes
-        id: newChatId,
-        user1: user1,
-        user2: user2,
-        timestamp: serverTimestamp(), 
-      });
-  
-      console.log('Chat created successfully:', newChatId);
-      setSelectedChat({ id: newChatId, user1: user1, user2: user2 }); // Store the newly created chat in selectedChat state
-  
-      // Return the newly created chat object
-      return {
-        id: newChatId,
-        user1: user1,
-        user2: user2,
-      };
-    } catch (error) {
-      console.error('Error creating chat:', error);
-      return null; // Return null in case of error
-    }
-  };
+  const [message, setmessage] = useState("");
+
 
   const send = async (e, selectedChat) => {
     e.preventDefault();
